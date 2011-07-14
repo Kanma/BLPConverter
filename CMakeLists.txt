@@ -8,6 +8,7 @@ set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${BLPCONVERTER_BINARY_DIR}/bin")
 add_subdirectory(dependencies)
 
 include_directories("${BLPCONVERTER_SOURCE_DIR}/dependencies/include/"
+                    "${BLPCONVERTER_SOURCE_DIR}/dependencies/FreeImage/"
 )
 
 add_executable(BLPConverter main.cpp blp.cpp)
