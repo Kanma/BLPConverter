@@ -32,7 +32,7 @@ const CSimpleOpt::SOption COMMAND_LINE_OPTIONS[] = {
 void showUsage(const std::string& strApplicationName)
 {
     cout << "BLPConverter" << endl
-         << "Usage: " << strApplicationName << " [options] <blp_filename> [<destination>]" << endl
+         << "Usage: " << strApplicationName << " [options] <blp_filename> [<blp_filename> ... <blp_filename>]" << endl
          << endl;
 }
 
@@ -90,26 +90,28 @@ int main(int argc, char** argv)
         return -1;
     }
     
+    for (unsigned int i = 0; i < args.FileCount(); ++i)
+    {
+        tBLP2Header header;
 
-    FILE* pFile = fopen(args.File(0), "rb");
-    if (!pFile)
-    {
-        cerr << "Failed to open the file '" << args.File(0) << "'" << endl;
-        return -1;
-    }
+        FILE* pFile = fopen(args.File(i), "rb");
+        if (!pFile)
+        {
+            cerr << "Failed to open the file '" << args.File(i) << "'" << endl;
+            continue;
+        }
     
-    tBLP2Header header;
+        if (!blp_processFile(pFile, &header))
+        {
+            cerr << "Failed to process the file '" << args.File(i) << "'" << endl;
+            fclose(pFile);
+            continue;
+        }
+
+        showInfos(args.File(i), &header);
     
-    if (!blp_processFile(pFile, &header))
-    {
-        cerr << "Failed to process the file '" << args.File(0) << "'" << endl;
         fclose(pFile);
-        return -1;
     }
-
-    showInfos(args.File(0), &header);
-    
-    fclose(pFile);
     
     return 0;
 }
