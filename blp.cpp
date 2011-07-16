@@ -4,7 +4,7 @@
 
 // Forward declaration of "internal" functions
 tBGRAPixel* blp_convert_paletted_no_alpha(uint8_t* pSrc, tBLP2Header* pHeader, unsigned int width, unsigned int height);
-
+tBGRAPixel* blp_convert_paletted_alpha8(uint8_t* pSrc, tBLP2Header* pHeader, unsigned int width, unsigned int height);
 
 
 tBLP2Header* blp_processFile(FILE* pFile)
@@ -68,7 +68,7 @@ tBGRAPixel* blp_convert(FILE* pFile, tBLP2Header* pHeader, unsigned int mipLevel
     // Declarations
     unsigned int width = blp_width(pHeader, mipLevel);
     unsigned int height = blp_height(pHeader, mipLevel);
-    uint8_t* pSrc = new uint8_t[width * height];
+    uint8_t* pSrc = new uint8_t[pHeader->lengths[mipLevel]];
     tBGRAPixel* pDst = 0;
 
     // Read the data from the file
@@ -78,6 +78,7 @@ tBGRAPixel* blp_convert(FILE* pFile, tBLP2Header* pHeader, unsigned int mipLevel
     switch (blp_format(pHeader))
     {
         case BLP_FORMAT_PALETTED_NO_ALPHA: pDst = blp_convert_paletted_no_alpha(pSrc, pHeader, width, height); break;
+        case BLP_FORMAT_PALETTED_ALPHA_8:  pDst = blp_convert_paletted_alpha8(pSrc, pHeader, width, height); break;
         default:                           break;
     }
 
@@ -104,7 +105,6 @@ std::string blp_asString(tBLPFormat format)
 }
 
 
-
 tBGRAPixel* blp_convert_paletted_no_alpha(uint8_t* pSrc, tBLP2Header* pHeader, unsigned int width, unsigned int height)
 {
     tBGRAPixel* pBuffer = new tBGRAPixel[width * height];
@@ -118,6 +118,31 @@ tBGRAPixel* blp_convert_paletted_no_alpha(uint8_t* pSrc, tBLP2Header* pHeader, u
             pDst->a = 0xFF;
 
             ++pSrc;
+            ++pDst;
+        }
+    }
+    
+    return pBuffer;
+}
+
+
+tBGRAPixel* blp_convert_paletted_alpha8(uint8_t* pSrc, tBLP2Header* pHeader, unsigned int width, unsigned int height)
+{
+    tBGRAPixel* pBuffer = new tBGRAPixel[width * height];
+    tBGRAPixel* pDst = pBuffer;
+    
+    uint8_t* pIndices = pSrc;
+    uint8_t* pAlpha = pSrc + width * height;
+    
+    for (unsigned int y = 0; y < height; ++y)
+    {
+        for (unsigned int x = 0; x < width; ++x)
+        {
+            *pDst = pHeader->palette[*pIndices];
+            pDst->a = *pAlpha;
+
+            ++pIndices;
+            ++pAlpha;
             ++pDst;
         }
     }
