@@ -4,6 +4,7 @@
 
 // Forward declaration of "internal" functions
 tBGRAPixel* blp_convert_paletted_no_alpha(uint8_t* pSrc, tBLP2Header* pHeader, unsigned int width, unsigned int height);
+tBGRAPixel* blp_convert_paletted_alpha1(uint8_t* pSrc, tBLP2Header* pHeader, unsigned int width, unsigned int height);
 tBGRAPixel* blp_convert_paletted_alpha8(uint8_t* pSrc, tBLP2Header* pHeader, unsigned int width, unsigned int height);
 
 
@@ -78,6 +79,7 @@ tBGRAPixel* blp_convert(FILE* pFile, tBLP2Header* pHeader, unsigned int mipLevel
     switch (blp_format(pHeader))
     {
         case BLP_FORMAT_PALETTED_NO_ALPHA: pDst = blp_convert_paletted_no_alpha(pSrc, pHeader, width, height); break;
+        case BLP_FORMAT_PALETTED_ALPHA_1:  pDst = blp_convert_paletted_alpha1(pSrc, pHeader, width, height); break;
         case BLP_FORMAT_PALETTED_ALPHA_8:  pDst = blp_convert_paletted_alpha8(pSrc, pHeader, width, height); break;
         default:                           break;
     }
@@ -144,6 +146,38 @@ tBGRAPixel* blp_convert_paletted_alpha8(uint8_t* pSrc, tBLP2Header* pHeader, uns
             ++pIndices;
             ++pAlpha;
             ++pDst;
+        }
+    }
+    
+    return pBuffer;
+}
+
+
+tBGRAPixel* blp_convert_paletted_alpha1(uint8_t* pSrc, tBLP2Header* pHeader, unsigned int width, unsigned int height)
+{
+    tBGRAPixel* pBuffer = new tBGRAPixel[width * height];
+    tBGRAPixel* pDst = pBuffer;
+    
+    uint8_t* pIndices = pSrc;
+    uint8_t* pAlpha = pSrc + width * height;
+    uint8_t counter = 0;
+    
+    for (unsigned int y = 0; y < height; ++y)
+    {
+        for (unsigned int x = 0; x < width; ++x)
+        {
+            *pDst = pHeader->palette[*pIndices];
+            pDst->a = (*pAlpha & (1 << counter) ? 0xFF : 0x00);
+
+            ++pIndices;
+            ++pDst;
+
+            ++counter;
+            if (counter == 8)
+            {
+                ++pAlpha;
+                counter = 0;
+            }
         }
     }
     
