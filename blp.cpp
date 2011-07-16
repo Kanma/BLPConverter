@@ -2,17 +2,31 @@
 #include <string.h>
 
 
-bool blp_processFile(FILE* pFile, tBLP2Header* pHeader)
+// Forward declaration of "internal" functions
+tBGRAPixel* blp_convert_paletted_no_alpha(uint8_t* pSrc, tBLP2Header* pHeader, unsigned int width, unsigned int height);
+
+
+
+tBLP2Header* blp_processFile(FILE* pFile)
 {
+    tBLP2Header* pHeader = new tBLP2Header();
+    
     fseek(pFile, 0, SEEK_SET);
     fread((void*) pHeader, sizeof(uint8_t), 4, pFile);
 
     if (strncmp((char*) pHeader->magic, "BLP2", 4) != 0)
-        return false;
+    {
+        delete pHeader;
+        return 0;
+    }
 
     fread((void*) &pHeader->type, sizeof(tBLP2Header) - 4 * sizeof(uint8_t), 1, pFile);
     
-    return true;
+    pHeader->nbMipLevels = 0;
+    while ((pHeader->offsets[pHeader->nbMipLevels] != 0) && (pHeader->nbMipLevels < 16))
+        ++pHeader->nbMipLevels;
+    
+    return pHeader;
 }
 
 
@@ -25,14 +39,51 @@ tBLPFormat blp_format(tBLP2Header* pHeader)
 }
 
 
-unsigned int blp_nbMipLevels(tBLP2Header* pHeader)
+unsigned int blp_width(tBLP2Header* pHeader, unsigned int mipLevel)
 {
-    unsigned int nb = 0;
-    
-    while ((pHeader->offsets[nb] != 0) && (nb < 16))
-        ++nb;
+    // Check the mip level
+    if (mipLevel >= pHeader->nbMipLevels)
+        mipLevel = pHeader->nbMipLevels - 1;
 
-    return nb;
+    return (pHeader->width >> mipLevel);
+}
+
+
+unsigned int blp_height(tBLP2Header* pHeader, unsigned int mipLevel)
+{
+    // Check the mip level
+    if (mipLevel >= pHeader->nbMipLevels)
+        mipLevel = pHeader->nbMipLevels - 1;
+
+    return (pHeader->height >> mipLevel);
+}
+
+
+tBGRAPixel* blp_convert(FILE* pFile, tBLP2Header* pHeader, unsigned int mipLevel)
+{
+    // Check the mip level
+    if (mipLevel >= pHeader->nbMipLevels)
+        mipLevel = pHeader->nbMipLevels - 1;
+
+    // Declarations
+    unsigned int width = blp_width(pHeader, mipLevel);
+    unsigned int height = blp_height(pHeader, mipLevel);
+    uint8_t* pSrc = new uint8_t[width * height];
+    tBGRAPixel* pDst = 0;
+
+    // Read the data from the file
+    fseek(pFile, pHeader->offsets[mipLevel], SEEK_SET);
+    fread((void*) pSrc, sizeof(uint8_t), pHeader->lengths[mipLevel], pFile);
+    
+    switch (blp_format(pHeader))
+    {
+        case BLP_FORMAT_PALETTED_NO_ALPHA: pDst = blp_convert_paletted_no_alpha(pSrc, pHeader, width, height); break;
+        default:                           break;
+    }
+
+    delete[] pSrc;
+    
+    return pDst;
 }
 
 
@@ -50,4 +101,26 @@ std::string blp_asString(tBLPFormat format)
         case BLP_FORMAT_DXT5_ALPHA_8:      return "DXT5, 8-bit alpha";
         default:                           return "Unknown";
     }
+}
+
+
+
+tBGRAPixel* blp_convert_paletted_no_alpha(uint8_t* pSrc, tBLP2Header* pHeader, unsigned int width, unsigned int height)
+{
+    tBGRAPixel* pBuffer = new tBGRAPixel[width * height];
+    tBGRAPixel* pDst = pBuffer;
+    
+    for (unsigned int y = 0; y < height; ++y)
+    {
+        for (unsigned int x = 0; x < width; ++x)
+        {
+            *pDst = pHeader->palette[*pSrc];
+            pDst->a = 0xFF;
+
+            ++pSrc;
+            ++pDst;
+        }
+    }
+    
+    return pBuffer;
 }

@@ -12,3 +12,4 @@ include_directories("${BLPCONVERTER_SOURCE_DIR}/dependencies/include/"
 )
 
 add_executable(BLPConverter main.cpp blp.cpp)
+target_link_libraries(BLPConverter freeimage)
