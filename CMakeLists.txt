@@ -9,7 +9,8 @@ add_subdirectory(dependencies)
 
 include_directories("${BLPCONVERTER_SOURCE_DIR}/dependencies/include/"
                     "${BLPCONVERTER_SOURCE_DIR}/dependencies/FreeImage/"
+                    "${BLPCONVERTER_SOURCE_DIR}/dependencies/squish/"
 )
 
 add_executable(BLPConverter main.cpp blp.cpp)
-target_link_libraries(BLPConverter freeimage)
+target_link_libraries(BLPConverter freeimage squish)

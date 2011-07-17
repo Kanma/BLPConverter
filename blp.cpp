@@ -1,4 +1,5 @@
 #include "blp.h"
+#include <squish.h>
 #include <string.h>
 
 
@@ -6,6 +7,7 @@
 tBGRAPixel* blp_convert_paletted_no_alpha(uint8_t* pSrc, tBLP2Header* pHeader, unsigned int width, unsigned int height);
 tBGRAPixel* blp_convert_paletted_alpha1(uint8_t* pSrc, tBLP2Header* pHeader, unsigned int width, unsigned int height);
 tBGRAPixel* blp_convert_paletted_alpha8(uint8_t* pSrc, tBLP2Header* pHeader, unsigned int width, unsigned int height);
+tBGRAPixel* blp_convert_dxt(uint8_t* pSrc, tBLP2Header* pHeader, unsigned int width, unsigned int height, int flags);
 
 
 tBLP2Header* blp_processFile(FILE* pFile)
@@ -81,6 +83,11 @@ tBGRAPixel* blp_convert(FILE* pFile, tBLP2Header* pHeader, unsigned int mipLevel
         case BLP_FORMAT_PALETTED_NO_ALPHA: pDst = blp_convert_paletted_no_alpha(pSrc, pHeader, width, height); break;
         case BLP_FORMAT_PALETTED_ALPHA_1:  pDst = blp_convert_paletted_alpha1(pSrc, pHeader, width, height); break;
         case BLP_FORMAT_PALETTED_ALPHA_8:  pDst = blp_convert_paletted_alpha8(pSrc, pHeader, width, height); break;
+        case BLP_FORMAT_DXT1_NO_ALPHA:
+        case BLP_FORMAT_DXT1_ALPHA_1:      pDst = blp_convert_dxt(pSrc, pHeader, width, height, squish::kDxt1); break;
+        case BLP_FORMAT_DXT3_ALPHA_4:
+        case BLP_FORMAT_DXT3_ALPHA_8:      pDst = blp_convert_dxt(pSrc, pHeader, width, height, squish::kDxt3); break;
+        case BLP_FORMAT_DXT5_ALPHA_8:      pDst = blp_convert_dxt(pSrc, pHeader, width, height, squish::kDxt5); break;
         default:                           break;
     }
 
@@ -180,6 +187,36 @@ tBGRAPixel* blp_convert_paletted_alpha1(uint8_t* pSrc, tBLP2Header* pHeader, uns
             }
         }
     }
+    
+    return pBuffer;
+}
+
+
+tBGRAPixel* blp_convert_dxt(uint8_t* pSrc, tBLP2Header* pHeader, unsigned int width, unsigned int height, int flags)
+{
+    squish::u8* rgba = new squish::u8[width * height * 4];
+    tBGRAPixel* pBuffer = new tBGRAPixel[width * height];
+
+    squish::u8* pSrc2 = rgba;
+    tBGRAPixel* pDst = pBuffer;
+    
+    squish::DecompressImage(rgba, width, height, pSrc, flags);
+
+    for (unsigned int y = 0; y < height; ++y)
+    {
+        for (unsigned int x = 0; x < width; ++x)
+        {
+            pDst->r = pSrc2[0];
+            pDst->g = pSrc2[1];
+            pDst->b = pSrc2[2];
+            pDst->a = pSrc2[3];
+
+            pSrc2 += 4;
+            ++pDst;
+        }
+    }
+
+    delete[] rgba;
     
     return pBuffer;
 }
