@@ -45,6 +45,14 @@ Options:
 
 
 ---------------------------------------
+- Extras
+---------------------------------------
+
+The Python script 'extra/convert_all.py' can be used to convert recursively in-place
+all the BLP files in a hierarchy of folders.
+
+
+---------------------------------------
 - Dependencies
 ---------------------------------------
 
