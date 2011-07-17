@@ -166,14 +166,14 @@ int main(int argc, char** argv)
                 FIBITMAP* pImage = FreeImage_Allocate(width, height, 32, 0x000000FF, 0x0000FF00, 0x00FF0000);
                 if (pImage)
                 {
-                    tBGRAPixel* pSrc = pData;
+                    tBGRAPixel* pSrc = pData + (height - 1) * width;
                     
                     for (unsigned int y = 0; y < height; ++y)
                     {
                         BYTE* pLine = FreeImage_GetScanLine(pImage, y);
                         memcpy(pLine, pSrc, width * sizeof(tBGRAPixel));
                         
-                        pSrc += width;
+                        pSrc -= width;
                     }
                     
                     if (FreeImage_Save((strFormat == "tga" ? FIF_TARGA : FIF_PNG), pImage, (strOutputFolder + strOutFileName).c_str(), 0))
