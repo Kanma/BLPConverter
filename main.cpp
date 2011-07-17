@@ -43,7 +43,15 @@ const CSimpleOpt::SOption COMMAND_LINE_OPTIONS[] = {
 void showUsage(const std::string& strApplicationName)
 {
     cout << "BLPConverter" << endl
+         << endl
          << "Usage: " << strApplicationName << " [options] <blp_filename> [<blp_filename> ... <blp_filename>]" << endl
+         << endl
+         << "Options:" << endl
+         << "  --help, -h:      Display this help" << endl
+         << "  --infos, -i:     Display informations about the BLP file(s) (no conversion)" << endl
+         << "  --dest, -o:      Folder where the converted image(s) must be written to (default: './')" << endl
+         << "  --format, -f:    'png' or 'tga' (default: png)" << endl
+         << "  --miplevel, -m:  The specific mip level to convert (default: 0, the bigger one)" << endl
          << endl;
 }
 
