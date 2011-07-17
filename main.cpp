@@ -17,6 +17,7 @@ enum
     OPT_HELP,
     OPT_INFOS,
     OPT_DEST,
+    OPT_FORMAT,
     OPT_MIP_LEVEL,
 };
 
@@ -28,6 +29,8 @@ const CSimpleOpt::SOption COMMAND_LINE_OPTIONS[] = {
     { OPT_INFOS,     "--infos",    SO_NONE },
     { OPT_DEST,      "-o",         SO_REQ_SEP },
     { OPT_DEST,      "--dest",     SO_REQ_SEP },
+    { OPT_FORMAT,    "-f",         SO_REQ_SEP },
+    { OPT_FORMAT,    "--format",   SO_REQ_SEP },
     { OPT_MIP_LEVEL, "-m",         SO_REQ_SEP },
     { OPT_MIP_LEVEL, "--miplevel", SO_REQ_SEP },
 
@@ -60,6 +63,7 @@ int main(int argc, char** argv)
 {
     bool         bInfos             = false;
     string       strOutputFolder    = "./";
+    string       strFormat          = "png";
     unsigned int mipLevel           = 0;
     unsigned int nbImagesTotal      = 0;
     unsigned int nbImagesConverted  = 0;
@@ -85,6 +89,12 @@ int main(int argc, char** argv)
                     strOutputFolder = args.OptionArg();
                     if (strOutputFolder.at(strOutputFolder.size() - 1) != '/')
                         strOutputFolder += "/";
+                    break;
+
+                case OPT_FORMAT:
+                    strFormat = args.OptionArg();
+                    if (strFormat != "tga")
+                        strFormat = "png";
                     break;
 
                 case OPT_MIP_LEVEL:
@@ -116,7 +126,7 @@ int main(int argc, char** argv)
         ++nbImagesTotal;
         
         string strInFileName = args.File(i);
-        string strOutFileName = strInFileName.substr(0, strInFileName.size() - 3) + "png";
+        string strOutFileName = strInFileName.substr(0, strInFileName.size() - 3) + strFormat;
         
         size_t offset = strOutFileName.find_last_of("/");
         if (offset != string::npos)
@@ -158,7 +168,7 @@ int main(int argc, char** argv)
                         pSrc += width;
                     }
                     
-                    if (FreeImage_Save(FIF_PNG, pImage, (strOutputFolder + strOutFileName).c_str(), 0))
+                    if (FreeImage_Save((strFormat == "tga" ? FIF_TARGA : FIF_PNG), pImage, (strOutputFolder + strOutFileName).c_str(), 0))
                     {
                         cerr << strInFileName << ": OK" << endl;
                         ++nbImagesConverted;
