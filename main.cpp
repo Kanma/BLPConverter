@@ -17,16 +17,19 @@ enum
     OPT_HELP,
     OPT_INFOS,
     OPT_DEST,
+    OPT_MIP_LEVEL,
 };
 
 
 const CSimpleOpt::SOption COMMAND_LINE_OPTIONS[] = {
-    { OPT_HELP,  "-h",      SO_NONE },
-    { OPT_HELP,  "--help",  SO_NONE },
-    { OPT_INFOS, "-i",      SO_NONE },
-    { OPT_INFOS, "--infos", SO_NONE },
-    { OPT_DEST,  "-o",      SO_REQ_SEP },
-    { OPT_DEST,  "--dest",  SO_REQ_SEP },
+    { OPT_HELP,      "-h",         SO_NONE },
+    { OPT_HELP,      "--help",     SO_NONE },
+    { OPT_INFOS,     "-i",         SO_NONE },
+    { OPT_INFOS,     "--infos",    SO_NONE },
+    { OPT_DEST,      "-o",         SO_REQ_SEP },
+    { OPT_DEST,      "--dest",     SO_REQ_SEP },
+    { OPT_MIP_LEVEL, "-m",         SO_REQ_SEP },
+    { OPT_MIP_LEVEL, "--miplevel", SO_REQ_SEP },
 
     SO_END_OF_OPTIONS
 };
@@ -82,6 +85,10 @@ int main(int argc, char** argv)
                     strOutputFolder = args.OptionArg();
                     if (strOutputFolder.at(strOutputFolder.size() - 1) != '/')
                         strOutputFolder += "/";
+                    break;
+
+                case OPT_MIP_LEVEL:
+                    mipLevel = atoi(args.OptionArg());
                     break;
             }
         }
