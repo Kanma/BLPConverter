@@ -13,6 +13,20 @@
 A command-line tool to convert BLP image files to PNG or TGA format. The BLP
 images are used by Blizzard games.
 
+Supports the following BLP formats:
+
+    * BLP1:
+        - JPEG
+        - Uncompressed without alpha channel
+        - Uncompressed with alpha channel (8-bits)
+    * BLP2:
+        - Uncompressed without alpha channel
+        - Uncompressed with alpha channel (1- and 8-bits)
+        - DXT1 without alpha channel
+        - DXT1 with alpha channel (1-bit)
+        - DXT3 with alpha channel (4- and 8-bits)
+        - DXT5 with alpha channel (8-bit)
+
 Works on MacOS X and Linux.
 
 

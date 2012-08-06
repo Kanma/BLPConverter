@@ -1,0 +1,138 @@
+//+-----------------------------------------------------------------------------
+//| Info
+//+-----------------------------------------------------------------------------
+The BLP file format!
+Compiled by Magnus Ostberg (aka Magos)
+MagosX@GMail.com
+
+
+//+-----------------------------------------------------------------------------
+//| Data types
+//+-----------------------------------------------------------------------------
+CHAR   - 8bit character
+BYTE   - 8bit unsigned integer
+WORD   - 16bit unsigned integer
+DWORD  - 32bit unsigned integer
+FLOAT  - 32bit floating point number
+COLOR  - 32bit color value of type RGBA, one byte per channel
+X[n]   - An n-dimensional vector of type X
+
+
+//+-----------------------------------------------------------------------------
+//| Descriptions
+//+-----------------------------------------------------------------------------
+[X | Y];      - Exactly one of the structures X and Y are present.
+
+X;            - A structure that must be present.
+
+#X            - A flag value, more than one can be combined.
+
+
+//+-----------------------------------------------------------------------------
+//| Notes
+//+-----------------------------------------------------------------------------
+- A full mipmap chain must be present. The last mipmap must be 1x1 (no larger).
+  If an image is 32x8 the mipmap chain must be 32x8, 16x4, 8x2, 4x1, 2x1, 1x1.
+  Sizes not of powers of 2 seems to work fine too, the same rules for mipmaps
+  still applies. Ex: 24x17, 12x8 (rounded down), 6x4, 3x2, 1x1 (rounded down).
+
+
+//+-----------------------------------------------------------------------------
+//| BLP structure
+//+-----------------------------------------------------------------------------
+struct Blp
+{
+  DWORD 'BLP1';
+  DWORD Compression;                   //0 - Uses JPEG compression
+                                       //1 - Uses palettes (uncompressed)
+  DWORD Flags;                         //#8 - Uses alpha channel (?)
+  DWORD Width;
+  DWORD Height;
+  DWORD PictureType;                   //3 - Uncompressed index list + alpha list
+                                       //4 - Uncompressed index list + alpha list
+                                       //5 - Uncompressed index list
+  DWORD PictureSubType;                //1 - ???
+  DWORD MipMapOffset[16];
+  DWORD MipMapSize[16];
+
+  [BlpJpeg | BlpUncompressed1 | BlpUncompressed2]
+};
+
+
+//+-----------------------------------------------------------------------------
+//| BLP JPEG structure (Compression == 0)
+//+-----------------------------------------------------------------------------
+struct BlpJpeg
+{
+  DWORD JpegHeaderSize;
+
+  BYTE[JpegHeaderSize] JpegHeader;
+
+  struct MipMap[16]
+  {
+    BYTE[???] JpegData;
+  };
+
+  // Up to 16 mipmaps can be stored in a blp image. 2^16 = 65536, so there's
+  // little risk it won't be enough. Each JPEG (JFIF to be more exact) image
+  // is constructed by merging the header with the mipmap (all mipmaps uses
+  // the same header. It seems like Warcraft 3 can handle JPEG header sizes
+  // of 0 (in case you have trouble generating JPEG images using the same
+  // header) however there are other fan tools that does not. Specifying a
+  // low number like 4 will work too as the only shared data are the initial
+  // JPEG markers.
+  //
+  // Each mipmap has a certain size and is located at  a certain offset as
+  // specified in the main blp header. There can be (and sometimes are in
+  // Blizzard's images) unused space between the JPEG header and the JPEG
+  // data. Why this is I don't know!
+  //
+  // The JPEG header of Blizzard's images is usually 624 bytes long. This
+  // may or may not be true for your own generated images depending on how
+  // you generated them.
+  //
+  // The JPEG format is advanced so I won't go into detail here.
+};
+
+
+//+-----------------------------------------------------------------------------
+//| BLP Uncompressed 1 structure (Compression == 1, PictureType == 3 or 4)
+//+-----------------------------------------------------------------------------
+struct BlpUncompressed1
+{
+  COLOR[256] Palette;
+
+  struct MipMap[16]
+  {
+    BYTE IndexList[CurrentWidth * CurrentHeight];
+    BYTE AlphaList[CurrentWidth * CurrentHeight];
+  };
+
+  // CurrentWidth/CurrentHeight is the width/height for the current mipmap.
+  // Mipmap size/offset works the same as explained for JPEGs above.
+  //
+  // Each cell in the index list refers to a location in the palette where
+  // the corresponding RGB value is (the palette is still RGBA, but A is not
+  // used). The alpha list contains the alpha value for the pixel.
+};
+
+
+//+-----------------------------------------------------------------------------
+//| BLP Uncompressed 2 structure (Compression == 1, PictureType == 5)
+//+-----------------------------------------------------------------------------
+struct BlpUncompressed2
+{
+  COLOR[256] Palette;
+
+  struct MipMap[16]
+  {
+    BYTE IndexList[CurrentWidth * CurrentHeight];
+  };
+
+  // CurrentWidth/CurrentHeight is the width/height for the current mipmap.
+  // Mipmap size/offset works the same as explained for JPEGs above.
+  //
+  // Each cell in the index list refers to a location in the palette where
+  // the corresponding RGBA value is. The alpha value is inversed so the real
+  // alpha is "255 - alpha".
+};

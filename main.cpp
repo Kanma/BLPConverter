@@ -56,13 +56,14 @@ void showUsage(const std::string& strApplicationName)
 }
 
 
-void showInfos(const std::string& strFileName, tBLP2Header* pHeader)
+void showInfos(const std::string& strFileName, tBLPInfos blpInfos)
 {
     cout << endl
          << "Infos about '" << strFileName << "':" << endl
-         << "  - Format:     " << blp_asString(blp_format(pHeader)) << endl
-         << "  - Dimensions: " << pHeader->width << "x" << pHeader->height << endl
-         << "  - Mip levels: " << (unsigned int) pHeader->nbMipLevels << endl
+         << "  - Version:    BLP" << blp_version(blpInfos) << endl
+         << "  - Format:     " << blp_asString(blp_format(blpInfos)) << endl
+         << "  - Dimensions: " << blp_width(blpInfos) << "x" << blp_height(blpInfos) << endl
+         << "  - Mip levels: " << blp_nbMipLevels(blpInfos) << endl
          << endl;
 }
 
@@ -88,7 +89,7 @@ int main(int argc, char** argv)
                 case OPT_HELP:
                     showUsage(argv[0]);
                     return 0;
-                
+
                 case OPT_INFOS:
                     bInfos = true;
                     break;
@@ -123,7 +124,7 @@ int main(int argc, char** argv)
         return -1;
     }
 
-    
+
     // Initialise FreeImage
     FreeImage_Initialise(true);
 
@@ -132,14 +133,14 @@ int main(int argc, char** argv)
     for (unsigned int i = 0; i < args.FileCount(); ++i)
     {
         ++nbImagesTotal;
-        
+
         string strInFileName = args.File(i);
         string strOutFileName = strInFileName.substr(0, strInFileName.size() - 3) + strFormat;
-        
+
         size_t offset = strOutFileName.find_last_of("/");
         if (offset != string::npos)
             strOutFileName = strOutFileName.substr(offset + 1);
-        
+
         FILE* pFile = fopen(strInFileName.c_str(), "rb");
         if (!pFile)
         {
@@ -147,8 +148,8 @@ int main(int argc, char** argv)
             continue;
         }
 
-        tBLP2Header* pHeader = blp_processFile(pFile);
-        if (!pHeader)
+        tBLPInfos blpInfos = blp_processFile(pFile);
+        if (!blpInfos)
         {
             cerr << "Failed to process the file '" << strInFileName << "'" << endl;
             fclose(pFile);
@@ -157,25 +158,25 @@ int main(int argc, char** argv)
 
         if (!bInfos)
         {
-            tBGRAPixel* pData = blp_convert(pFile, pHeader, mipLevel);
+            tBGRAPixel* pData = blp_convert(pFile, blpInfos, mipLevel);
             if (pData)
             {
-                unsigned int width = blp_width(pHeader, mipLevel);
-                unsigned int height = blp_height(pHeader, mipLevel);
-                
+                unsigned int width = blp_width(blpInfos, mipLevel);
+                unsigned int height = blp_height(blpInfos, mipLevel);
+
                 FIBITMAP* pImage = FreeImage_Allocate(width, height, 32, 0x000000FF, 0x0000FF00, 0x00FF0000);
                 if (pImage)
                 {
                     tBGRAPixel* pSrc = pData + (height - 1) * width;
-                    
+
                     for (unsigned int y = 0; y < height; ++y)
                     {
                         BYTE* pLine = FreeImage_GetScanLine(pImage, y);
                         memcpy(pLine, pSrc, width * sizeof(tBGRAPixel));
-                        
+
                         pSrc -= width;
                     }
-                    
+
                     if (FreeImage_Save((strFormat == "tga" ? FIF_TARGA : FIF_PNG), pImage, (strOutputFolder + strOutFileName).c_str(), 0))
                     {
                         cerr << strInFileName << ": OK" << endl;
@@ -185,7 +186,7 @@ int main(int argc, char** argv)
                     {
                         cerr << strInFileName << ": Failed to save the image" << endl;
                     }
-                    
+
                     FreeImage_Unload(pImage);
                 }
                 else
@@ -202,16 +203,16 @@ int main(int argc, char** argv)
         }
         else
         {
-            showInfos(args.File(i), pHeader);
+            showInfos(args.File(i), blpInfos);
         }
-    
+
         fclose(pFile);
 
-        delete pHeader;
+        blp_release(blpInfos);
     }
-    
+
     // Cleanup
     FreeImage_DeInitialise();
-    
+
     return 0;
 }

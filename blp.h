@@ -15,26 +15,8 @@ struct tBGRAPixel
 };
 
 
-// A description of the BLP format can be found on Wikipedia: http://en.wikipedia.org/wiki/.BLP
-struct tBLP2Header
-{
-    uint8_t     magic[4];       // Always 'BLP2'
-    uint32_t    type;           // 0: JPEG, 1: see encoding
-    uint8_t     encoding;       // 1: Uncompressed, 2: DXT compression
-    uint8_t     alphaDepth;     // 0, 1, 4 or 8 bits
-    uint8_t     alphaEncoding;  // 0: DXT1, 1: DXT3, 7: DXT5
-    
-    union {
-        uint8_t     hasMipLevels;   // In BLP file: 0 or 1
-        uint8_t     nbMipLevels;    // For convenience, replaced with the number of mip levels
-    };
-    
-    uint32_t    width;          // In pixels, power-of-two
-    uint32_t    height;
-    uint32_t    offsets[16];
-    uint32_t    lengths[16];
-    tBGRAPixel  palette[256];   // 256 BGRA colors
-};
+// Opaque type representing a BLP file
+typedef void* tBLPInfos;
 
 
 enum tBLPEncoding
@@ -63,6 +45,8 @@ enum tBLPAlphaEncoding
 
 enum tBLPFormat
 {
+    BLP_FORMAT_JPEG = 0,
+
     BLP_FORMAT_PALETTED_NO_ALPHA = (BLP_ENCODING_UNCOMPRESSED << 16) | (BLP_ALPHA_DEPTH_0 << 8),
     BLP_FORMAT_PALETTED_ALPHA_1  = (BLP_ENCODING_UNCOMPRESSED << 16) | (BLP_ALPHA_DEPTH_1 << 8),
     BLP_FORMAT_PALETTED_ALPHA_8  = (BLP_ENCODING_UNCOMPRESSED << 16) | (BLP_ALPHA_DEPTH_8 << 8),
@@ -75,14 +59,17 @@ enum tBLPFormat
 };
 
 
-tBLP2Header* blp_processFile(FILE* pFile);
+tBLPInfos blp_processFile(FILE* pFile);
+void blp_release(tBLPInfos blpInfos);
 
-tBLPFormat blp_format(tBLP2Header* pHeader);
+uint8_t blp_version(tBLPInfos blpInfos);
+tBLPFormat blp_format(tBLPInfos blpInfos);
 
-unsigned int blp_width(tBLP2Header* pHeader, unsigned int mipLevel=0);
-unsigned int blp_height(tBLP2Header* pHeader, unsigned int mipLevel=0);
+unsigned int blp_width(tBLPInfos blpInfos, unsigned int mipLevel=0);
+unsigned int blp_height(tBLPInfos blpInfos, unsigned int mipLevel=0);
+unsigned int blp_nbMipLevels(tBLPInfos blpInfos);
 
-tBGRAPixel* blp_convert(FILE* pFile, tBLP2Header* pHeader, unsigned int mipLevel=0);
+tBGRAPixel* blp_convert(FILE* pFile, tBLPInfos blpInfos, unsigned int mipLevel=0);
 
 std::string blp_asString(tBLPFormat format);
 
