@@ -41,6 +41,8 @@ build$ make
 
 The executable will be put in build/bin/
 
+To compile as a library add -DWITH_LIBRARY=YES as a flag to cmake.
+
 
 ---------------------------------------
 - Usage

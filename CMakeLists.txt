@@ -14,5 +14,12 @@ include_directories("${BLPCONVERTER_SOURCE_DIR}/dependencies/include/"
 
 add_executable(BLPConverter main.cpp blp.cpp)
 target_link_libraries(BLPConverter freeimage squish)
-
 set_target_properties(BLPConverter PROPERTIES COMPILE_DEFINITIONS "FREEIMAGE_LIB")
+
+option(WITH_LIBRARY "Compile library" OFF)
+if(WITH_LIBRARY)
+    add_library(blp SHARED blp.cpp)
+    target_link_libraries(blp freeimage squish)
+    install(TARGETS blp RUNTIME DESTINATION bin LIBRARY DESTINATION lib ARCHIVE DESTINATION lib)
+    install(FILES blp.h blp_internal.h DESTINATION include)
+endif()

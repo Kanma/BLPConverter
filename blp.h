@@ -5,6 +5,9 @@
 #include <stdio.h>
 #include <string>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 struct tBGRAPixel
 {
@@ -70,6 +73,10 @@ unsigned int blp_height(tBLPInfos blpInfos, unsigned int mipLevel=0);
 unsigned int blp_nbMipLevels(tBLPInfos blpInfos);
 
 tBGRAPixel* blp_convert(FILE* pFile, tBLPInfos blpInfos, unsigned int mipLevel=0);
+
+#ifdef __cplusplus
+}
+#endif
 
 std::string blp_asString(tBLPFormat format);
 
