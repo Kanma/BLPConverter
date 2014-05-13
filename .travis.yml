@@ -1,0 +1,16 @@
+language: cpp
+
+compiler:
+  - clang
+  - gcc
+
+env:
+  - CMAKE_BUILD_TYPE=Debug WITH_LIBRARY=OFF
+  - CMAKE_BUILD_TYPE=Debug WITH_LIBRARY=ON
+  - CMAKE_BUILD_TYPE=Release WITH_LIBRARY=OFF
+  - CMAKE_BUILD_TYPE=Release WITH_LIBRARY=ON
+
+script:
+  - mkdir build
+  - cd build
+  - cmake -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE} -DWITH_LIBRARY=${WITH_LIBRARY} .. && make
