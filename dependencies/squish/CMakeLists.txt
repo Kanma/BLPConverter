@@ -18,7 +18,7 @@ add_library(squish STATIC ${SRCS})
 
 # Compilation settings
 if (NOT WIN32)
-    set_target_properties(freeimage PROPERTIES COMPILE_FLAGS "-w -fPIC")
+    set_target_properties(squish PROPERTIES COMPILE_FLAGS "-w -fPIC")
 else()
-    set_target_properties(freeimage PROPERTIES COMPILE_FLAGS "/W0")
+    set_target_properties(squish PROPERTIES COMPILE_FLAGS "/W0")
 endif()
