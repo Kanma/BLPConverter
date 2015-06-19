@@ -9,6 +9,13 @@
 extern "C" {
 #endif
 
+
+#ifndef PLATFORM_WINDOWS
+#	define MODULE_API __declspec(dllexport)
+#else
+#	define MODULE_API
+#endif
+
 struct tBGRAPixel
 {
     uint8_t b;
@@ -16,7 +23,6 @@ struct tBGRAPixel
     uint8_t r;
     uint8_t a;
 };
-
 
 // Opaque type representing a BLP file
 typedef void* tBLPInfos;
@@ -62,17 +68,17 @@ enum tBLPFormat
 };
 
 
-tBLPInfos blp_processFile(FILE* pFile);
-void blp_release(tBLPInfos blpInfos);
+MODULE_API tBLPInfos blp_processFile(FILE* pFile);
+MODULE_API void blp_release(tBLPInfos blpInfos);
 
-uint8_t blp_version(tBLPInfos blpInfos);
-tBLPFormat blp_format(tBLPInfos blpInfos);
+MODULE_API uint8_t blp_version(tBLPInfos blpInfos);
+MODULE_API tBLPFormat blp_format(tBLPInfos blpInfos);
 
-unsigned int blp_width(tBLPInfos blpInfos, unsigned int mipLevel=0);
-unsigned int blp_height(tBLPInfos blpInfos, unsigned int mipLevel=0);
-unsigned int blp_nbMipLevels(tBLPInfos blpInfos);
+MODULE_API unsigned int blp_width(tBLPInfos blpInfos, unsigned int mipLevel = 0);
+MODULE_API unsigned int blp_height(tBLPInfos blpInfos, unsigned int mipLevel = 0);
+MODULE_API unsigned int blp_nbMipLevels(tBLPInfos blpInfos);
 
-tBGRAPixel* blp_convert(FILE* pFile, tBLPInfos blpInfos, unsigned int mipLevel=0);
+MODULE_API tBGRAPixel* blp_convert(FILE* pFile, tBLPInfos blpInfos, unsigned int mipLevel = 0);
 
 #ifdef __cplusplus
 }
