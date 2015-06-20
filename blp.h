@@ -9,9 +9,12 @@
 extern "C" {
 #endif
 
-
-#ifndef PLATFORM_WINDOWS
-#	define MODULE_API __declspec(dllexport)
+#ifdef _WIN32
+#	ifdef blp_EXPORTS
+#		define MODULE_API __declspec(dllexport)
+#	else
+#		define MODULE_API
+#	endif
 #else
 #	define MODULE_API
 #endif
