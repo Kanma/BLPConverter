@@ -42,7 +42,7 @@ struct tBLP2Header
 {
     uint8_t     magic[4];       // Always 'BLP2'
     uint32_t    type;           // 0: JPEG, 1: see encoding
-    uint8_t     encoding;       // 1: Uncompressed, 2: DXT compression
+    uint8_t     encoding;       // 1: Uncompressed, 2: DXT compression, 3: Uncompressed BGRA
     uint8_t     alphaDepth;     // 0, 1, 4 or 8 bits
     uint8_t     alphaEncoding;  // 0: DXT1, 1: DXT3, 7: DXT5
 

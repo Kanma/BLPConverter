@@ -13,7 +13,9 @@ tBGRAPixel* blp1_convert_paletted_no_alpha(uint8_t* pSrc, tBLP1Infos* pInfos, un
 tBGRAPixel* blp1_convert_paletted_separated_alpha(uint8_t* pSrc, tBLP1Infos* pInfos, unsigned int width, unsigned int height, bool invertAlpha);
 tBGRAPixel* blp2_convert_paletted_no_alpha(uint8_t* pSrc, tBLP2Header* pHeader, unsigned int width, unsigned int height);
 tBGRAPixel* blp2_convert_paletted_alpha1(uint8_t* pSrc, tBLP2Header* pHeader, unsigned int width, unsigned int height);
+tBGRAPixel* blp2_convert_paletted_alpha4(uint8_t* pSrc, tBLP2Header* pHeader, unsigned int width, unsigned int height);
 tBGRAPixel* blp2_convert_paletted_alpha8(uint8_t* pSrc, tBLP2Header* pHeader, unsigned int width, unsigned int height);
+tBGRAPixel* blp2_convert_raw_bgra(uint8_t* pSrc, tBLP2Header* pHeader, unsigned int width, unsigned int height);
 tBGRAPixel* blp2_convert_dxt(uint8_t* pSrc, tBLP2Header* pHeader, unsigned int width, unsigned int height, int flags);
 
 
@@ -107,6 +109,9 @@ tBLPFormat blp_format(tBLPInfos blpInfos)
 
         if (pBLPInfos->blp2.encoding == BLP_ENCODING_UNCOMPRESSED)
             return tBLPFormat((pBLPInfos->blp2.encoding << 16) | (pBLPInfos->blp2.alphaDepth << 8));
+
+        if (pBLPInfos->blp2.encoding == BLP_ENCODING_UNCOMPRESSED_RAW_BGRA)
+            return tBLPFormat((pBLPInfos->blp2.encoding << 16));
 
         return tBLPFormat((pBLPInfos->blp2.encoding << 16) | (pBLPInfos->blp2.alphaDepth << 8) | pBLPInfos->blp2.alphaEncoding);
     }
@@ -239,6 +244,8 @@ tBGRAPixel* blp_convert(FILE* pFile, tBLPInfos blpInfos, unsigned int mipLevel)
 
         case BLP_FORMAT_PALETTED_ALPHA_1:  pDst = blp2_convert_paletted_alpha1(pSrc, &pBLPInfos->blp2, width, height); break;
 
+        case BLP_FORMAT_PALETTED_ALPHA_4:  pDst = blp2_convert_paletted_alpha4(pSrc, &pBLPInfos->blp2, width, height); break;
+
         case BLP_FORMAT_PALETTED_ALPHA_8:
             if (pBLPInfos->version == 2)
             {
@@ -252,6 +259,8 @@ tBGRAPixel* blp_convert(FILE* pFile, tBLPInfos blpInfos, unsigned int mipLevel)
                     pDst = blp1_convert_paletted_separated_alpha(pSrc, &pBLPInfos->blp1.infos, width, height, (pBLPInfos->blp1.header.alphaEncoding == 3));
             }
             break;
+
+        case BLP_FORMAT_RAW_BGRA: pDst = blp2_convert_raw_bgra(pSrc, &pBLPInfos->blp2, width, height); break;
 
         case BLP_FORMAT_DXT1_NO_ALPHA:
         case BLP_FORMAT_DXT1_ALPHA_1:      pDst = blp2_convert_dxt(pSrc, &pBLPInfos->blp2, width, height, squish::kDxt1); break;
@@ -274,7 +283,9 @@ std::string blp_asString(tBLPFormat format)
         case BLP_FORMAT_JPEG:              return "JPEG";
         case BLP_FORMAT_PALETTED_NO_ALPHA: return "Uncompressed paletted image, no alpha";
         case BLP_FORMAT_PALETTED_ALPHA_1:  return "Uncompressed paletted image, 1-bit alpha";
+        case BLP_FORMAT_PALETTED_ALPHA_4:  return "Uncompressed paletted image, 4-bit alpha";
         case BLP_FORMAT_PALETTED_ALPHA_8:  return "Uncompressed paletted image, 8-bit alpha";
+        case BLP_FORMAT_RAW_BGRA:          return "Uncompressed raw 32-bit BGRA";
         case BLP_FORMAT_DXT1_NO_ALPHA:     return "DXT1, no alpha";
         case BLP_FORMAT_DXT1_ALPHA_1:      return "DXT1, 1-bit alpha";
         case BLP_FORMAT_DXT3_ALPHA_4:      return "DXT3, 4-bit alpha";
@@ -481,6 +492,61 @@ tBGRAPixel* blp2_convert_paletted_alpha1(uint8_t* pSrc, tBLP2Header* pHeader, un
     return pBuffer;
 }
 
+tBGRAPixel* blp2_convert_paletted_alpha4(uint8_t* pSrc, tBLP2Header* pHeader, unsigned int width, unsigned int height)
+{
+    tBGRAPixel* pBuffer = new tBGRAPixel[width * height];
+    tBGRAPixel* pDst = pBuffer;
+
+    uint8_t* pIndices = pSrc;
+    uint8_t* pAlpha = pSrc + width * height;
+    uint8_t counter = 0;
+
+    for (unsigned int y = 0; y < height; ++y)
+    {
+        for (unsigned int x = 0; x < width; ++x)
+        {
+            *pDst = pHeader->palette[*pIndices];
+            pDst->a = (*pAlpha >> counter) & 0xF;
+
+            // convert 4-bit range to 8-bit range
+            pDst->a = (pDst->a << 4) | pDst->a;
+
+            ++pIndices;
+            ++pDst;
+
+            counter += 4;
+            if (counter == 8)
+            {
+                ++pAlpha;
+                counter = 0;
+            }
+        }
+    }
+
+    return pBuffer;
+}
+
+tBGRAPixel* blp2_convert_raw_bgra(uint8_t* pSrc, tBLP2Header* pHeader, unsigned int width, unsigned int height)
+{
+    tBGRAPixel* pBuffer = new tBGRAPixel[width * height];
+    tBGRAPixel* pDst = pBuffer;
+
+    for (unsigned int y = 0; y < height; ++y)
+    {
+        for (unsigned int x = 0; x < width; ++x)
+        {
+            pDst->b = pSrc[0];
+            pDst->g = pSrc[1];
+            pDst->r = pSrc[2];
+            pDst->a = pSrc[3];
+
+            pSrc += 4;
+            ++pDst;
+        }
+    }
+
+    return pBuffer;
+}
 
 tBGRAPixel* blp2_convert_dxt(uint8_t* pSrc, tBLP2Header* pHeader, unsigned int width, unsigned int height, int flags)
 {
