@@ -21,7 +21,8 @@ Supports the following BLP formats:
         - Uncompressed with alpha channel (8-bits)
     * BLP2:
         - Uncompressed without alpha channel
-        - Uncompressed with alpha channel (1- and 8-bits)
+        - Uncompressed with alpha channel (1-, 4-, and 8-bits)
+        - Uncompressed raw BGRA (known as RAW3)
         - DXT1 without alpha channel
         - DXT1 with alpha channel (1-bit)
         - DXT3 with alpha channel (4- and 8-bits)
