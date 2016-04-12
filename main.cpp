@@ -137,7 +137,7 @@ int main(int argc, char** argv)
         string strInFileName = args.File(i);
         string strOutFileName = strInFileName.substr(0, strInFileName.size() - 3) + strFormat;
 
-        size_t offset = strOutFileName.find_last_of("/");
+        size_t offset = strOutFileName.find_last_of("/\\");
         if (offset != string::npos)
             strOutFileName = strOutFileName.substr(offset + 1);
 
