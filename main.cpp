@@ -60,7 +60,7 @@ void showInfos(const std::string& strFileName, tBLPInfos blpInfos)
 {
     cout << endl
          << "Infos about '" << strFileName << "':" << endl
-         << "  - Version:    BLP" << blp_version(blpInfos) << endl
+         << "  - Version:    BLP" << (int) blp_version(blpInfos) << endl
          << "  - Format:     " << blp_asString(blp_format(blpInfos)) << endl
          << "  - Dimensions: " << blp_width(blpInfos) << "x" << blp_height(blpInfos) << endl
          << "  - Mip levels: " << blp_nbMipLevels(blpInfos) << endl
