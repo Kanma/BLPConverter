@@ -66,7 +66,6 @@ tBLPInfos blp_processFile(FILE* pFile)
         else
         {
             fread((void*) &pBLPInfos->blp1.infos.palette, sizeof(pBLPInfos->blp1.infos.palette), 1, pFile);
-            // printf("%d %d %d\n", pBLPInfos->blp1.header.flags, pBLPInfos->blp1.header.alphaEncoding, pBLPInfos->blp1.header.flags2);
         }
     }
     else
