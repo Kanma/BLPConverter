@@ -10,7 +10,7 @@
 tBGRAPixel* blp1_convert_jpeg(uint8_t* pSrc, tBLP1Infos* pInfos, uint32_t size);
 tBGRAPixel* blp1_convert_paletted_alpha(uint8_t* pSrc, tBLP1Infos* pInfos, unsigned int width, unsigned int height);
 tBGRAPixel* blp1_convert_paletted_no_alpha(uint8_t* pSrc, tBLP1Infos* pInfos, unsigned int width, unsigned int height);
-tBGRAPixel* blp1_convert_paletted_separated_alpha(uint8_t* pSrc, tBLP1Infos* pInfos, unsigned int width, unsigned int height, bool invertAlpha);
+tBGRAPixel* blp1_convert_paletted_separated_alpha(uint8_t* pSrc, tBLP1Infos* pInfos, unsigned int width, unsigned int height);
 tBGRAPixel* blp2_convert_paletted_no_alpha(uint8_t* pSrc, tBLP2Header* pHeader, unsigned int width, unsigned int height);
 tBGRAPixel* blp2_convert_paletted_alpha1(uint8_t* pSrc, tBLP2Header* pHeader, unsigned int width, unsigned int height);
 tBGRAPixel* blp2_convert_paletted_alpha4(uint8_t* pSrc, tBLP2Header* pHeader, unsigned int width, unsigned int height);
@@ -256,7 +256,7 @@ tBGRAPixel* blp_convert(FILE* pFile, tBLPInfos blpInfos, unsigned int mipLevel)
                 if (pBLPInfos->blp1.header.alphaEncoding == 5)
                     pDst = blp1_convert_paletted_alpha(pSrc, &pBLPInfos->blp1.infos, width, height);
                 else
-                    pDst = blp1_convert_paletted_separated_alpha(pSrc, &pBLPInfos->blp1.infos, width, height, (pBLPInfos->blp1.header.alphaEncoding == 3));
+                    pDst = blp1_convert_paletted_separated_alpha(pSrc, &pBLPInfos->blp1.infos, width, height);
             }
             break;
 
@@ -340,7 +340,7 @@ tBGRAPixel* blp1_convert_jpeg(uint8_t* pSrc, tBLP1Infos* pInfos, uint32_t size)
 }
 
 
-tBGRAPixel* blp1_convert_paletted_separated_alpha(uint8_t* pSrc, tBLP1Infos* pInfos, unsigned int width, unsigned int height, bool invertAlpha)
+tBGRAPixel* blp1_convert_paletted_separated_alpha(uint8_t* pSrc, tBLP1Infos* pInfos, unsigned int width, unsigned int height)
 {
     tBGRAPixel* pBuffer = new tBGRAPixel[width * height];
     tBGRAPixel* pDst = pBuffer;
@@ -353,11 +353,7 @@ tBGRAPixel* blp1_convert_paletted_separated_alpha(uint8_t* pSrc, tBLP1Infos* pIn
         for (unsigned int x = 0; x < width; ++x)
         {
             *pDst = pInfos->palette[*pIndices];
-
-            if (invertAlpha)
-                pDst->a = 0xFF - *pAlpha;
-            else
-                pDst->a = *pAlpha;
+            pDst->a = *pAlpha;
 
             ++pIndices;
             ++pAlpha;
