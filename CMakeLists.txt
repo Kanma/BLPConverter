@@ -11,6 +11,10 @@ option(WITH_LIBRARY "Compile library" OFF)
 ##########################################################################################
 # CMake-related settings
 
+# The bundled FreeImage/OpenEXR sources use dynamic exception specifications,
+# which were removed in C++17. Force an older standard so they still compile.
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=gnu++14")
+
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${BLPCONVERTER_BINARY_DIR}/bin")
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY "${BLPCONVERTER_BINARY_DIR}/lib")
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${BLPCONVERTER_BINARY_DIR}/bin")
