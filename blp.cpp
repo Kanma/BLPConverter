@@ -304,12 +304,52 @@ tBGRAPixel* blp1_convert_jpeg(uint8_t* pSrc, tBLP1Infos* pInfos, uint32_t size)
 
     FIMEMORY* pMemory = FreeImage_OpenMemory(pSrcBuffer, pInfos->jpeg.headerSize + size);
 
-    FIBITMAP* pBitmap = FreeImage_LoadFromMemory(FIF_JPEG, pMemory);
+    // The four components of a BLP1 JPEG are the raw B, G, R and A planes of
+    // the texture. The embedded stream carries no Adobe marker, so libjpeg has
+    // nothing to identify the components by and reports the image as CMYK.
+    // Without JPEG_CMYK, FreeImage applies an ink model to data that is not
+    // ink: it multiplies every colour channel by the fourth plane. Since that
+    // plane is alpha, a texture whose alpha is 0x00 decodes to solid black and
+    // one with a partially populated alpha comes out darkened in proportion to
+    // its own transparency. Ask for the planes untouched instead.
+    FIBITMAP* pBitmap = FreeImage_LoadFromMemory(FIF_JPEG, pMemory, JPEG_CMYK);
 
     unsigned int width = FreeImage_GetWidth(pBitmap);
     unsigned int height = FreeImage_GetHeight(pBitmap);
     unsigned int bytespp = FreeImage_GetLine(pBitmap) / FreeImage_GetWidth(pBitmap);
 
+    // Only a four component stream carries the separate alpha plane. Greyscale
+    // and RGB BLP JPEGs still arrive converted, and keep the original handling.
+    bool bSeparatePlanes = (bytespp == 4);
+
+    // Authoring tools disagree about the alpha plane. Some set the alpha flag
+    // in the BLP header and fill the plane with 0x00, others with 0xFF, and
+    // both mean the same thing: the texture is opaque and the plane was never
+    // populated. Taking either at face value gets a large share of real files
+    // wrong, so a plane holding a single value is treated as carrying no
+    // information at all. A plane that genuinely varies is used as it stands.
+    bool bUseAlpha = false;
+
+    if (bSeparatePlanes && (height > 0) && (width > 0))
+    {
+        BYTE firstAlpha = FreeImage_GetScanLine(pBitmap, 0)[3];
+
+        for (unsigned int y = 0; !bUseAlpha && (y < height); ++y)
+        {
+            BYTE* pRow = FreeImage_GetScanLine(pBitmap, y);
+
+            for (unsigned int x = 0; x < width; ++x)
+            {
+                if (pRow[3] != firstAlpha)
+                {
+                    bUseAlpha = true;
+                    break;
+                }
+
+                pRow += bytespp;
+            }
+        }
+    }
 
     tBGRAPixel* pBuffer = new tBGRAPixel[width * height];
     tBGRAPixel* pDst = pBuffer;
@@ -320,11 +360,23 @@ tBGRAPixel* blp1_convert_jpeg(uint8_t* pSrc, tBLP1Infos* pInfos, uint32_t size)
 
         for (unsigned int x = 0; x < width; ++x)
         {
-            // R and B are inverted in the JPEG file
-            pDst->r = pSrc2[FI_RGBA_BLUE];
-            pDst->g = pSrc2[FI_RGBA_GREEN];
-            pDst->b = pSrc2[FI_RGBA_RED];
-            pDst->a = 0xFF;
+            if (bSeparatePlanes)
+            {
+                // Loaded "as is", so the bytes are in the order the JPEG
+                // stores them rather than in FreeImage's channel order.
+                pDst->b = pSrc2[0];
+                pDst->g = pSrc2[1];
+                pDst->r = pSrc2[2];
+                pDst->a = bUseAlpha ? pSrc2[3] : 0xFF;
+            }
+            else
+            {
+                // R and B are inverted in the JPEG file
+                pDst->r = pSrc2[FI_RGBA_BLUE];
+                pDst->g = pSrc2[FI_RGBA_GREEN];
+                pDst->b = pSrc2[FI_RGBA_RED];
+                pDst->a = 0xFF;
+            }
 
             ++pDst;
             pSrc2 += bytespp;
